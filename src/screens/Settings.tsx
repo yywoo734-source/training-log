@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Phase } from '../lib/types.ts'
 import { exportJSON, importJSON, resetAll, saveSettings, useDB, useSyncStatus } from '../lib/store.ts'
 import { Panel } from '../ui.tsx'
+import Plan from './Plan.tsx'
 
 const PHASES: { id: Phase; label: string; desc: string }[] = [
   { id: 'cut', label: '감량기', desc: '체지방·허리둘레를 줄이는 국면. 중량이 제자리여도 성공으로 봅니다.' },
@@ -15,6 +16,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
   const s = db.settings
   const [msg, setMsg] = useState('')
   const [text, setText] = useState('')
+  const [plan, setPlan] = useState(false)
 
   const num = (k: 'targetKcal' | 'targetP' | 'targetF' | 'targetC' | 'kegelPerWeek', label: string, unit: string) => (
     <label className="field" key={k}>
@@ -35,12 +37,23 @@ export default function Settings({ onClose }: { onClose: () => void }) {
     }
   }
 
+  if (plan) return <Plan onClose={() => setPlan(false)} />
+
   return (
     <>
       <div className="topbar">
         <h1>설정</h1>
         <button type="button" className="btn sm" onClick={onClose}>닫기</button>
       </div>
+
+      <div className="sec"><span>루틴과 종목</span></div>
+      <button type="button" className="tile wide" onClick={() => setPlan(true)}>
+        <span className="k">고치기</span>
+        <span className="v" style={{ fontSize: 18 }}>루틴 {db.routines.length}개 · 종목 {db.exercises.length}개</span>
+        <span className="d mut" style={{ fontWeight: 400, whiteSpace: 'normal' }}>
+          루틴에 종목을 넣고 빼고 순서를 바꿉니다. 종목을 누르면 성장 그래프와 세트·휴식 설정이 나옵니다.
+        </span>
+      </button>
 
       <div className="sec"><span>지금 어떤 국면인가</span></div>
       <div className="stack">

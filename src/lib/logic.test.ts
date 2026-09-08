@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { EXERCISES } from './seed.ts'
-import { advise } from './progression.ts'
+import { advise, seriesFor, trendNote } from './progression.ts'
 import { recoveryScore } from './recovery.ts'
-import type { Entry, Exercise, RecoveryLog, SetLog } from './types.ts'
+import type { Entry, Exercise, RecoveryLog, Session, SetLog } from './types.ts'
 
 const ex = (id: string): Exercise => EXERCISES.find((e) => e.id === id)!
 
@@ -90,5 +90,82 @@ describe('회복 점수', () => {
   it('0~100 범위를 벗어나지 않는다', () => {
     const over: RecoveryLog = { date: '2026-09-08', sleepH: 20, sleepQuality: 5, fatigue: 1, soreness: 1 }
     expect(recoveryScore(over, false)).toBe(100)
+  })
+})
+
+
+// ── 성장 그래프 ─────────────────────────────────────────────
+const pt = (date: string, load: number, reps: number[]) => ({ date, load, reps })
+
+describe('성장 그래프 한 줄 요약', () => {
+  it('무게가 그대로여도 횟수가 늘면 성장이라고 말한다', () => {
+    // 세로축이 실제 무게라 선은 평평하다. 이걸 말로 짚지 않으면 정체로 읽힌다.
+    const pts = [
+      pt('2026-01-01', 50, [8, 8, 8]),
+      pt('2026-01-08', 50, [8, 8, 8]),
+      pt('2026-01-15', 50, [10, 10, 10]),
+      pt('2026-01-22', 50, [11, 11, 10]),
+    ]
+    expect(trendNote(ex('latpull'), pts, 'cut')).toContain('횟수가 늘고')
+  })
+
+  it('무게가 오르면 그렇게 말한다', () => {
+    const pts = [
+      pt('2026-01-01', 50, [8, 8, 8]),
+      pt('2026-01-08', 50, [8, 8, 8]),
+      pt('2026-01-15', 55, [8, 8, 8]),
+      pt('2026-01-22', 60, [8, 8, 8]),
+    ]
+    expect(trendNote(ex('latpull'), pts, 'cut')).toBe('무게가 오르고 있습니다.')
+  })
+
+  it('어시스트 풀업은 보조중량이 내려간 것을 성장으로 읽는다', () => {
+    const pts = [
+      pt('2026-01-01', 25, [8, 8, 8]),
+      pt('2026-01-08', 25, [8, 8, 8]),
+      pt('2026-01-15', 20, [8, 8, 8]),
+      pt('2026-01-22', 15, [8, 8, 8]),
+    ]
+    expect(trendNote(ex('pullup'), pts, 'cut')).toBe('무게가 오르고 있습니다.')
+  })
+
+  it('감량기에 무게가 내려간 것은 실패로 말하지 않는다', () => {
+    const pts = [
+      pt('2026-01-01', 60, [8, 8, 8]),
+      pt('2026-01-08', 60, [8, 8, 8]),
+      pt('2026-01-15', 55, [8, 8, 8]),
+      pt('2026-01-22', 50, [8, 8, 8]),
+    ]
+    expect(trendNote(ex('latpull'), pts, 'cut')).toContain('감량기에는')
+    expect(trendNote(ex('latpull'), pts, 'bulk')).toContain('회복 점수')
+  })
+
+  it('맨몸 종목은 무게 대신 총 횟수로 판단한다', () => {
+    const pts = [
+      pt('2026-01-01', 0, [8, 8, 8]),
+      pt('2026-01-08', 0, [8, 8, 8]),
+      pt('2026-01-15', 0, [12, 12, 12]),
+      pt('2026-01-22', 0, [13, 13, 12]),
+    ]
+    expect(trendNote(ex('hlr'), pts, 'cut')).toContain('총 횟수가 늘고')
+  })
+
+  it('기록이 하나뿐이면 흐름을 말하지 않는다', () => {
+    expect(trendNote(ex('latpull'), [pt('2026-01-01', 50, [8])], 'cut')).toContain('2회는 쌓여야')
+  })
+})
+
+describe('그래프에 넣을 기록 고르기', () => {
+  const session = (date: string, done: boolean, load: number, reps: number[]): Session => ({
+    id: date, date, routineId: 'upperA', done,
+    entries: [{ exerciseId: 'latpull', load, sets: reps.map<SetLog>((r) => ({ reps: r, rir: 2 })) }],
+  })
+
+  it('완료하지 않은 세션은 빼고, 오래된 순으로 준다', () => {
+    const out = seriesFor(
+      [session('2026-01-15', true, 55, [8]), session('2026-01-08', false, 50, [8]), session('2026-01-01', true, 50, [8])],
+      'latpull',
+    )
+    expect(out.map((p) => p.date)).toEqual(['2026-01-01', '2026-01-15'])
   })
 })

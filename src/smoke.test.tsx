@@ -45,5 +45,16 @@ test('다섯 탭이 모두 그려지고 기록이 화면에 나온다', async ()
   await act(async () => { (gear as HTMLButtonElement).click() })
   expect(el.textContent).toContain('감량기')
 
+  // 설정 → 루틴 화면 → 종목 상세(그래프 포함)까지 들어가 본다
+  const toPlan = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('루틴'))
+  await act(async () => { (toPlan as HTMLButtonElement).click() })
+  expect(el.textContent).toContain('이 루틴의 순서')
+
+  const exBtn = el.querySelector('.slotname') as HTMLButtonElement
+  expect(exBtn, '루틴에 종목이 없음').toBeTruthy()
+  await act(async () => { exBtn.click() })
+  expect(el.textContent).toContain('성장 그래프')
+  expect(el.textContent).toContain('목표 횟수')
+
   await act(async () => { root.unmount() })
 })

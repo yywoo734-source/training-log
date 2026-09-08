@@ -31,6 +31,57 @@ export function historyFor(sessions: Session[], exerciseId: string, beforeDate?:
     .flatMap((s) => s.entries.filter((e) => e.exerciseId === exerciseId && e.sets.some((x) => x.reps > 0)))
 }
 
+/** 그래프용 — 이 종목의 세션별 기록을 오래된 순으로, 날짜를 붙여서 */
+export function seriesFor(sessions: Session[], exerciseId: string): Point[] {
+  return sessions
+    .filter((s) => s.done)
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+    .flatMap((s) =>
+      s.entries
+        .filter((e) => e.exerciseId === exerciseId && e.sets.some((x) => x.reps > 0))
+        .map((e) => ({ date: s.date, load: e.load, reps: repsOf(e) })),
+    )
+}
+
+export type Point = { date: string; load: number; reps: number[] }
+
+const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
+const avg = (a: number[]) => (a.length ? sum(a) / a.length : 0)
+
+/**
+ * 그래프 아래 한 줄.
+ * 세로축이 '실제 든 무게'라서, 무게는 그대로인데 횟수가 늘어난 성장은 선이 평평하다.
+ * 그 경우를 말로 짚어주지 않으면 그래프가 정체로 읽힌다.
+ */
+export function trendNote(ex: Exercise, pts: Point[], phase: Phase): string {
+  if (pts.length < 2) return '기록이 2회는 쌓여야 흐름이 보입니다.'
+
+  const half = Math.min(3, Math.floor(pts.length / 2))
+  const prev = pts.slice(-half * 2, -half)
+  const recent = pts.slice(-half)
+  const repsUp = avg(recent.map((p) => sum(p.reps))) - avg(prev.map((p) => sum(p.reps)))
+
+  if (ex.loadType === 'body') {
+    if (repsUp > 0.5) return `총 횟수가 늘고 있습니다. 맨몸 종목은 이게 성장입니다.`
+    if (repsUp < -0.5) return '총 횟수가 줄고 있습니다. 회복이나 자세를 먼저 보세요.'
+    return '횟수가 제자리입니다. 더 어려운 변형을 시도할 때일 수 있습니다.'
+  }
+
+  // 어시스트는 보조중량이 낮아지는 게 성장이라 방향을 뒤집는다
+  const dir = ex.loadType === 'assist' ? -1 : 1
+  const loadUp = (avg(recent.map((p) => p.load)) - avg(prev.map((p) => p.load))) * dir
+
+  if (loadUp > 0) return '무게가 오르고 있습니다.'
+  if (loadUp < 0) {
+    return phase === 'cut'
+      ? '무게가 내려갔습니다. 감량기에는 흔한 일이라 실패로 볼 것은 아닙니다.'
+      : '무게가 내려갔습니다. 회복 점수와 수면을 먼저 확인하세요.'
+  }
+  if (repsUp > 0.5) return '무게는 그대로지만 횟수가 늘고 있습니다. 선은 평평해도 성장 중입니다.'
+  if (repsUp < -0.5) return '무게도 횟수도 제자리에서 밀리고 있습니다. 회복을 보세요.'
+  return '무게도 횟수도 제자리입니다.'
+}
+
 const roundTo = (v: number, step: number) => (step ? Math.round(v / step) * step : v)
 
 export function repsOf(e: Entry): number[] {

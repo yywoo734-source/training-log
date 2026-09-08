@@ -144,4 +144,6 @@ export type DB = {
   body: BodyLog[]
   /** 케겔 완료한 날짜들 */
   kegel: string[]
+  /** 사용자가 지운 기본 제공 항목의 id. 이게 없으면 지운 게 다음 실행 때 되살아난다 */
+  removed: string[]
 }

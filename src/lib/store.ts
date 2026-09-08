@@ -1,25 +1,31 @@
 import { useSyncExternalStore } from 'react'
-import type { BodyLog, DB, Entry, Food, MealLog, RecoveryLog, Session, Settings } from './types.ts'
+import type { BodyLog, DB, Entry, Exercise, Food, MealLog, RecoveryLog, RoutineItem, Session, Settings } from './types.ts'
 import { EXERCISES, FOODS, ROUTINES, emptyDB } from './seed.ts'
 import { addDays, dayOf, weekDays, weekStart, ymd } from './date.ts'
 import { isHard, recoveryScore } from './recovery.ts'
 
 const KEY = 'gymlog-v1'
 
-function mergeById<T extends { id: string }>(seed: T[], saved: T[] | undefined): T[] {
+/**
+ * 저장본 + 아직 저장본에 없는 시드 항목. 단 사용자가 지운 시드 항목은 되살리지 않는다.
+ * removed가 없으면 "지웠는데 새로고침하면 되살아나는" 버그가 된다.
+ */
+function mergeById<T extends { id: string }>(seed: T[], saved: T[] | undefined, removed: string[]): T[] {
   if (!saved?.length) return seed
   const ids = new Set(saved.map((x) => x.id))
-  return [...saved, ...seed.filter((s) => !ids.has(s.id))]
+  return [...saved, ...seed.filter((s) => !ids.has(s.id) && !removed.includes(s.id))]
 }
 
 function hydrate(saved: DB): DB {
+  const removed = saved.removed ?? []
   return {
     ...emptyDB(),
     ...saved,
+    removed,
     settings: { ...emptyDB().settings, ...saved.settings },
-    exercises: mergeById(EXERCISES, saved.exercises),
-    routines: mergeById(ROUTINES, saved.routines),
-    foods: mergeById(FOODS, saved.foods),
+    exercises: mergeById(EXERCISES, saved.exercises, removed),
+    routines: mergeById(ROUTINES, saved.routines, removed),
+    foods: mergeById(FOODS, saved.foods, removed),
   }
 }
 
@@ -335,6 +341,51 @@ export function addFood(f: Omit<Food, 'id'>) {
 export function removeFood(id: string) {
   update((d) => {
     d.foods = d.foods.filter((f) => f.id !== id)
+    if (!d.removed.includes(id)) d.removed.push(id)
+  })
+}
+
+// ── 종목·루틴 편집 ──────────────────────────────────────────
+export function saveExercise(ex: Exercise) {
+  update((d) => {
+    const i = d.exercises.findIndex((x) => x.id === ex.id)
+    if (i >= 0) d.exercises[i] = ex
+    else d.exercises.push(ex)
+  })
+}
+
+/** 새 종목을 만들고 id를 돌려준다. 나머지 값은 편집 화면에서 고친다. */
+export function addExercise(name: string): string {
+  const id = uid()
+  update((d) => {
+    d.exercises.push({
+      id, name, en: '', category: 'push', loadType: 'weight',
+      sets: 3, repMin: 8, repMax: 12, restSec: 120, step: 2.5,
+    })
+  })
+  return id
+}
+
+/** 종목을 지우면 모든 루틴에서도 빠진다. 지난 기록은 남겨둔다. */
+export function removeExercise(id: string) {
+  update((d) => {
+    d.exercises = d.exercises.filter((x) => x.id !== id)
+    if (!d.removed.includes(id)) d.removed.push(id)
+    for (const r of d.routines) r.items = r.items.filter((it) => it.exerciseId !== id)
+  })
+}
+
+export function setRoutineItems(routineId: string, items: RoutineItem[]) {
+  update((d) => {
+    const r = d.routines.find((x) => x.id === routineId)
+    if (r) r.items = items
+  })
+}
+
+export function renameRoutine(routineId: string, name: string) {
+  update((d) => {
+    const r = d.routines.find((x) => x.id === routineId)
+    if (r) r.name = name
   })
 }
 

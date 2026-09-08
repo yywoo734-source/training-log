@@ -116,5 +116,6 @@ export function emptyDB(): DB {
     meals: [],
     body: [],
     kegel: [],
+    removed: [],
   }
 }

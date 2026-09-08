@@ -292,4 +292,61 @@ input[type='range'] { padding: 0; background: none; border: none; accent-color: 
 .hr { height: 1px; background: var(--line); margin: 4px 0; }
 .scroll-x { overflow-x: auto; }
 
+/* ── 루틴·종목 편집 ─────────────────────────────────────────── */
+.seg.scroll-x button { flex: 0 0 auto; padding: 9px 12px; }
+
+.slot {
+  display: flex; align-items: stretch; gap: 6px;
+  background: var(--tile); border: 1px solid var(--line); border-radius: 2px; padding: 6px;
+}
+.ord { display: flex; flex-direction: column; gap: 2px; }
+.ord button {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 2px;
+  color: var(--mut); font-size: 9px; line-height: 1; padding: 5px 6px; cursor: pointer;
+}
+.ord button:disabled { opacity: 0.3; }
+.slotname {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  background: none; border: 0; padding: 2px; text-align: left; color: var(--ink); cursor: pointer;
+}
+.slotname .nm { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub2 { font-size: 11.5px; color: var(--mut); }
+.setbox { display: flex; align-items: center; gap: 2px; }
+.setbox button {
+  width: 32px; height: 32px; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 2px; color: var(--ink); font-size: 15px; cursor: pointer;
+}
+.setbox b { min-width: 18px; text-align: center; font-size: 15px; }
+.x { background: none; border: 0; color: var(--red); font-size: 18px; line-height: 1; padding: 0 4px; cursor: pointer; }
+
+.pick { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 6px; }
+.pick button {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 2px;
+  color: var(--ink); font-size: 12.5px; padding: 6px 10px; cursor: pointer;
+}
+
+.bigfield {
+  background: var(--tile); border: 1px solid var(--line);
+  border-radius: 2px; padding: 10px 12px; margin-top: 6px;
+}
+.opt {
+  width: 100%; text-align: left; background: var(--tile); border: 1px solid var(--line);
+  border-radius: 2px; color: var(--ink); font-size: 13.5px; padding: 10px 11px; cursor: pointer;
+}
+.opt.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ── 성장 그래프 ────────────────────────────────────────────── */
+.chart { width: 100%; height: auto; display: block; margin: 4px 0 2px; touch-action: manipulation; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .line { stroke: var(--blu); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+/* 점 테두리는 배경색 — 점이 겹쳐도 서로 구분된다 */
+.chart .dot { fill: var(--blu); stroke: var(--tile); stroke-width: 2; cursor: pointer; }
+.chart .dot.on { fill: var(--ink); }
+.chart .axis {
+  fill: var(--mut); font-family: 'Barlow Semi Condensed', 'Noto Sans KR', sans-serif;
+  font-size: 11px; font-weight: 600;
+}
+.chart .axis.end { text-anchor: end; }
+.chart .axis.mid { dominant-baseline: middle; }
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
