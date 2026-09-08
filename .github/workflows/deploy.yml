@@ -1,0 +1,45 @@
+# main 에 올라가면 깃허브가 직접 빌드해서 배포한다. 로컬 빌드 결과를 올리지 않으므로
+# "빌드를 깜빡해서 옛날 화면이 배포되는" 사고가 없다.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Pages 주소가 https://<계정>.github.io/training-log/ 이므로 하위경로를 알려준다
+      - run: npm run build
+        env:
+          BASE: /training-log/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
