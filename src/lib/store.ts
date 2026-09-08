@@ -228,6 +228,23 @@ export function latestBody(d: DB, key: keyof BodyLog): { date: string; value: nu
   return found ? { date: found.date, value: found[key] as number } : null
 }
 
+/**
+ * 가장 최근 측정값과 그 직전 측정값. 인바디처럼 띄엄띄엄 찍는 값의 변화를 보는 데 쓴다.
+ * 매일 재는 체중과 달리 "지난번 대비"가 유일하게 의미 있는 비교라서 두 개만 돌려준다.
+ */
+export function bodyTrend(d: DB, key: keyof BodyLog) {
+  const xs = [...d.body]
+    .filter((b) => typeof b[key] === 'number')
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+  if (!xs.length) return null
+  return {
+    date: xs[0].date,
+    value: xs[0][key] as number,
+    prev: (xs[1]?.[key] as number | undefined) ?? null,
+    prevDate: xs[1]?.date ?? null,
+  }
+}
+
 export function weekProgress(d: DB, date: string) {
   const days = weekDays(weekStart(date))
   const done = (kind: string) =>

@@ -166,6 +166,7 @@ export default function Recovery({ date, setDate }: { date: string; setDate: (d:
 const FIELDS: [keyof BodyLog, string][] = [
   ['weight', '체중 kg'], ['waist', '허리 cm'], ['chest', '가슴 cm'],
   ['shoulder', '어깨 cm'], ['arm', '팔 cm'], ['thigh', '허벅지 cm'],
+  ['smm', '골격근량 kg'], ['bf', '체지방률 %'],
 ]
 
 function BodyForm({ date, body }: { date: string; body: BodyLog | undefined }) {

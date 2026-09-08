@@ -115,6 +115,10 @@ export type BodyLog = {
   shoulder?: number
   arm?: number
   thigh?: number
+  /** 인바디 골격근량(kg). 기계 연동은 불가능해서 결과지 보고 손으로 넣는다 */
+  smm?: number
+  /** 인바디 체지방률(%) */
+  bf?: number
 }
 
 export type Settings = {

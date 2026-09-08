@@ -2,7 +2,7 @@ import type { DB, Entry, Exercise } from '../lib/types.ts'
 import { addDays, shortKo, weekDays, weekNo, weekStart } from '../lib/date.ts'
 import { repsOf } from '../lib/progression.ts'
 import { isHard, recoveryScore } from '../lib/recovery.ts'
-import { avgWeight, exerciseById, latestBody, nutritionFor, routineById, sessionFor, useDB } from '../lib/store.ts'
+import { avgWeight, bodyTrend, exerciseById, latestBody, nutritionFor, routineById, sessionFor, useDB } from '../lib/store.ts'
 import { Panel, Stat, round1 } from '../ui.tsx'
 
 const CAT_LABEL: Record<Exercise['category'], string> = {
@@ -126,6 +126,8 @@ export default function Report({ date, setDate }: { date: string; setDate: (d: s
   const st = weekStats(db, date)
   const s = db.settings
   const waist = latestBody(db, 'waist')
+  const smm = bodyTrend(db, 'smm')
+  const bf = bodyTrend(db, 'bf')
 
   return (
     <>
@@ -229,6 +231,33 @@ export default function Report({ date, setDate }: { date: string; setDate: (d: s
       <div className="note" style={{ marginTop: 6 }}>
         하루 단위 변화는 수분과 글리코겐에 크게 흔들립니다. 3~4주 흐름으로 보세요.
       </div>
+
+      {(smm || bf) && (
+        <>
+          <div className="sec">
+            <span>인바디</span>
+            <span>{smm?.date ?? bf?.date} 측정</span>
+          </div>
+          <div className="g2">
+            <Stat
+              k="골격근량"
+              v={smm ? round1(smm.value) : '—'}
+              d={smm?.prev != null ? `${smm.value - smm.prev > 0 ? '+' : ''}${round1(smm.value - smm.prev)} kg` : 'kg'}
+              tone={smm?.prev != null ? (smm.value > smm.prev ? 'grn' : smm.value < smm.prev ? 'red' : 'mut') : 'mut'}
+            />
+            <Stat
+              k="체지방률"
+              v={bf ? round1(bf.value) : '—'}
+              d={bf?.prev != null ? `${bf.value - bf.prev > 0 ? '+' : ''}${round1(bf.value - bf.prev)} %p` : '%'}
+              tone={bf?.prev != null ? (bf.value < bf.prev ? 'grn' : bf.value > bf.prev ? 'red' : 'mut') : 'mut'}
+            />
+          </div>
+          <div className="note">
+            인바디는 그날 마신 물·식사·시간대에 흔들립니다. 골격근량 0.5kg 안쪽 변화는 변화가 아니라 오차로 보세요.
+            운동이 늘고 있는지는 위쪽 <b>종목 추세</b>가 훨씬 빨리 알려줍니다.
+          </div>
+        </>
+      )}
     </>
   )
 }
