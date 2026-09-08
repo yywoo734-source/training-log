@@ -59,3 +59,26 @@
 - 러닝/클라이밍/불가리안백의 상세 기록은 숫자 4칸까지만
 - 과훈련·일정 충돌 경고 (클라이밍 전날 등 고강도) — MVP3
 - InBody, 사진 비교 — MVP3. 사진은 localStorage에 못 넣으므로 IndexedDB 필요
+
+## 배포 — GitHub Pages
+
+주소: https://yywoo734-source.github.io/training-log/
+
+`main`에 push하면 `.github/workflows/deploy.yml`이 깃허브 러너에서 빌드해 배포한다.
+**로컬 `dist`를 올리지 않는다** — 빌드를 깜빡한 채 옛 화면이 배포되는 사고를 막기 위함.
+
+### `base`가 환경변수인 이유 (건드리기 전에 읽을 것)
+
+Pages 주소가 루트가 아니라 `/training-log/` 하위경로다. `base: './'` 상대경로만으로는
+`manifest.webmanifest`의 `start_url`/`scope`와 `registerSW.js`의 SW 등록 경로가 루트로 잡혀
+**홈화면 추가와 오프라인 캐시가 조용히 죽는다** (화면은 멀쩡히 뜨므로 눈치채기 어렵다).
+그래서 `base: process.env.BASE ?? './'`로 두고 워크플로에서 `BASE=/training-log/`를 넘긴다.
+
+- 로컬 dev/preview·`npm run page`(단일 HTML)는 BASE 없이 그대로 상대경로로 동작한다.
+- 저장소 이름을 바꾸면 워크플로의 `BASE`도 같이 바꿔야 한다.
+- 확인법: 배포 후 `curl .../manifest.webmanifest`의 `scope`가 `/training-log/`인지 본다.
+
+### 주소가 바뀌면 기록은 따라오지 않는다
+
+localStorage는 출처(origin)별로 분리된다. localhost에서 쓰던 기록은 Pages 주소로 안 넘어온다.
+설정 화면의 `백업 복사하기` → 새 주소에서 `붙여넣은 것 불러오기`로 옮긴다 (`store.ts`의 `exportJSON`/`importJSON`).
